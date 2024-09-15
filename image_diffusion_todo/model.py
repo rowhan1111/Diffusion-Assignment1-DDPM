@@ -18,8 +18,14 @@ class DiffusionModule(nn.Module):
         # DO NOT change the code outside this part.
         # compute noise matching loss.
         B = x0.shape[0]
-        timestep = self.var_scheduler.uniform_sample_t(B, self.device)        
-        loss = x0.mean()
+        t = self.var_scheduler.uniform_sample_t(B, self.device)  
+        noise = torch.randn_like(x0)
+        alpha_cumprod_t = self.var_scheduler.alphas_cumprod[t].view(-1, 1, 1, 1)
+        noisy_x = x0 * alpha_cumprod_t.sqrt() + noise * (1.0 - alpha_cumprod_t).sqrt() 
+        
+        noise_pred = self.network(noisy_x, t)
+        loss = nn.MSELoss()(noise_pred, noise)
+             
         ######################
         return loss
     

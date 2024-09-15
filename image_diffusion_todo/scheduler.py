@@ -87,6 +87,28 @@ class DDPMScheduler(BaseScheduler):
         # DO NOT change the code outside this part.
         # Assignment 1. Implement the DDPM reverse step.
         sample_prev = None
+        if isinstance(t, int):
+            t = torch.tensor([t]).to(self.device)
+        
+        beta_t = self.betas[t]
+        alpha_t = self.alphas[t]
+        alpha_cumprod_t = self.alphas_cumprod[t]
+        
+        # Predict the noise (epsilon_theta)
+        
+        # Calculate the mean for p(x_{t-1} | x_t)
+        mean = (1 / torch.sqrt(alpha_t)) * (x_t - ((beta_t) / torch.sqrt(1 - alpha_cumprod_t)) * eps_theta)
+        
+        # Sample noise for reparameterization
+        if t != 0:
+            noise = torch.randn_like(x_t)  # Random noise, used for t > 0
+        else:
+            noise = torch.zeros_like(x_t)
+        
+        # Compute x_{t-1}
+        sample_prev = mean + torch.sqrt(beta_t) * noise
+
+
         #######################
         
         return sample_prev
@@ -120,7 +142,9 @@ class DDPMScheduler(BaseScheduler):
         ######## TODO ########
         # DO NOT change the code outside this part.
         # Assignment 1. Implement the DDPM forward step.
-        x_t = None
+        alphas_prod_t = self.alphas_cumprod[t]
+        x_t = torch.sqrt(alphas_prod_t) * x_0 + torch.sqrt(1-alphas_prod_t) * eps
+
         #######################
 
         return x_t, eps
